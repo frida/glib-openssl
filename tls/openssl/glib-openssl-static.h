@@ -1,5 +1,5 @@
 /*
- * gtlsbackend-openssl.h
+ * glib-openssl-static.h
  *
  * Copyright (C) 2015 NICE s.r.l.
  *
@@ -22,32 +22,15 @@
  * Authors: Ignacio Casal Quinteiro
  */
 
-#ifndef __G_TLS_BACKEND_OPENSSL_H__
-#define __G_TLS_BACKEND_OPENSSL_H__
+#ifndef __GLIB_OPENSSL_STATIC_H__
+#define __GLIB_OPENSSL_STATIC_H__
 
-#include <gio/gio.h>
+#include <glib.h>
 
 G_BEGIN_DECLS
 
-#define G_TYPE_TLS_BACKEND_OPENSSL (g_tls_backend_openssl_get_type ())
-G_DECLARE_DERIVABLE_TYPE (GTlsBackendOpenssl, g_tls_backend_openssl,
-                          G, TLS_BACKEND_OPENSSL, GObject)
-
-struct _GTlsBackendOpensslClass
-{
-  GObjectClass parent_class;
-
-  GTlsDatabase*   (*create_database)      (GTlsBackendOpenssl         *backend,
-                                           GError                    **error);
-};
-
-#ifdef G_IO_MODULE_BUILD_STATIC
 void    g_io_module_openssl_register         (void);
-void    g_io_module_openssl_load_static      (void);
-#else
-void    g_tls_backend_openssl_register       (GIOModule *module);
-#endif
 
 G_END_DECLS
 
-#endif /* __G_TLS_BACKEND_OPENSSL_H___ */
+#endif /* __GLIB_OPENSSL_STATIC_H__ */
