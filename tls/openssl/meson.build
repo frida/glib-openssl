@@ -22,13 +22,15 @@ tlsopenssl_dep = declare_dependency(link_with: tlsopenssl,
                                     include_directories: include_directories('.', '../base'),
                                     dependencies: platform_deps)
 
-gioopenssl = shared_module('gioopenssl',
-                           tlsopenssl_sources,
-                           dependencies: [tlsopenssl_dep],
-                           include_directories: config_h_include,
-                           install: true,
-                           install_dir: gio_module_dir,
-                           c_args: [extra_args + common_flags])
+if gio_supports_plugins
+  gioopenssl = shared_module('gioopenssl',
+                             tlsopenssl_sources,
+                             dependencies: [tlsopenssl_dep],
+                             include_directories: config_h_include,
+                             install: true,
+                             install_dir: gio_module_dir,
+                             c_args: [extra_args + common_flags])
+endif
 
 # Internal dependency, for tests and benchmarks
 tlsopenssl_inc = include_directories([ '.', '..' ])
