@@ -24,7 +24,6 @@
 
 #include "config.h"
 
-#include <glib/gi18n-lib.h>
 #include <gio/gio.h>
 
 #include "gtlsbackend-openssl.h"
@@ -33,24 +32,7 @@
 void
 g_io_module_load (GIOModule *module)
 {
-  gchar *locale_dir;
-#ifdef G_OS_WIN32
-  gchar *base_dir;
-#endif
-
   g_tls_backend_openssl_register (module);
-
-#ifdef G_OS_WIN32
-  base_dir = g_win32_get_package_installation_directory_of_module (NULL);
-  locale_dir = g_build_filename (base_dir, "share", "locale", NULL);
-  g_free (base_dir);
-#else
-  locale_dir = g_strdup (LOCALE_DIR);
-#endif
-
-  bindtextdomain (GETTEXT_PACKAGE, locale_dir);
-  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-  g_free (locale_dir);
 }
 
 void

@@ -143,6 +143,5 @@ config_h_include = include_directories('.')
 subdir('tls/base')
 subdir('tls/openssl')
 subdir('tls/tests')
-subdir('po')
 
 meson.add_install_script(join_paths('build-aux', 'post_install.py'), gio_module_dir)
