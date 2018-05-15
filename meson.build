@@ -17,6 +17,15 @@ assert(gio_module_dir != '', 'GIO_MODULE_DIR is missing from gio-2.0.pc')
 
 gio_querymodules = find_program('gio-querymodules')
 
+gio_supports_plugins = cc.compiles('''
+#include <glib.h>
+#ifdef GIO_STATIC_COMPILATION
+# error GIO does not support plugins
+#endif
+                                   ''',
+                                   name: 'GIO supports plugins',
+                                   dependencies: [gio])
+
 # MSVC builds of OpenSSL does not generate pkg-config files,
 # so we check for it manually here in this case, if we can't find those files
 openssl = dependency('openssl', required: cc.get_id() != 'msvc')
@@ -144,4 +153,6 @@ subdir('tls/base')
 subdir('tls/openssl')
 subdir('tls/tests')
 
-meson.add_install_script(join_paths('build-aux', 'post_install.py'), gio_module_dir)
+if gio_supports_plugins
+  meson.add_install_script(join_paths('build-aux', 'post_install.py'), gio_module_dir)
+endif
