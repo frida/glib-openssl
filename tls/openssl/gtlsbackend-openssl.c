@@ -28,8 +28,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include <openssl/ssl.h>
-#include <openssl/crypto.h>
+#include "openssl-include.h"
 
 #include "gtlsbackend-openssl.h"
 #include "gtlscertificate-openssl.h"
@@ -45,17 +44,10 @@ typedef struct _GTlsBackendOpensslPrivate
 
 static void g_tls_backend_openssl_interface_init (GTlsBackendInterface *iface);
 
-#ifdef G_IO_MODULE_BUILD_STATIC
-G_DEFINE_TYPE_WITH_CODE (GTlsBackendOpenssl, g_tls_backend_openssl, G_TYPE_OBJECT,
-                         G_ADD_PRIVATE (GTlsBackendOpenssl)
-                         G_IMPLEMENT_INTERFACE (G_TYPE_TLS_BACKEND,
-                                                g_tls_backend_openssl_interface_init))
-#else
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (GTlsBackendOpenssl, g_tls_backend_openssl, G_TYPE_OBJECT, 0,
                                 G_ADD_PRIVATE_DYNAMIC (GTlsBackendOpenssl)
                                 G_IMPLEMENT_INTERFACE_DYNAMIC (G_TYPE_TLS_BACKEND,
                                                                g_tls_backend_openssl_interface_init))
-#endif
 
 static GMutex *mutex_array = NULL;
 
@@ -134,10 +126,8 @@ gtls_openssl_init (gpointer data)
   SSL_load_error_strings ();
   OpenSSL_add_all_algorithms ();
 
-#ifndef G_IO_MODULE_BUILD_STATIC
   /* Leak the module to keep it from being unloaded. */
   g_type_plugin_use (g_type_get_plugin (G_TYPE_TLS_BACKEND_OPENSSL));
-#endif
 
   return NULL;
 }
@@ -196,22 +186,31 @@ g_tls_backend_openssl_real_create_database (GTlsBackendOpenssl  *self,
   GTlsDatabase *database;
 
 #ifdef G_OS_WIN32
-  gchar *module_dir;
-  gchar *cert_path;
+  if (g_getenv ("G_TLS_OPENSSL_HANDLE_CERT_RELOCATABLE") != NULL)
+    {
+      gchar *module_dir;
 
-  module_dir = g_win32_get_package_installation_directory_of_module (NULL);
-  cert_path = g_build_filename (module_dir, "bin", "cert.pem", NULL);
-  g_free (module_dir);
-
-  if (g_file_test (cert_path, G_FILE_TEST_IS_REGULAR))
-    anchor_file = cert_path;
-  else
-    g_free (cert_path);
-#else
-# ifdef GTLS_SYSTEM_CA_FILE
-  anchor_file = g_strdup (GTLS_SYSTEM_CA_FILE);
-# endif
+      module_dir = g_win32_get_package_installation_directory_of_module (NULL);
+      anchor_file = g_build_filename (module_dir, "bin", "cert.pem", NULL);
+      g_free (module_dir);
+    }
 #endif
+
+#ifdef GTLS_SYSTEM_CA_FILE
+  if (anchor_file == NULL)
+    anchor_file = g_strdup (GTLS_SYSTEM_CA_FILE);
+#endif
+
+  if (anchor_file == NULL)
+    {
+      const gchar *openssl_cert_file;
+
+      openssl_cert_file = g_getenv (X509_get_default_cert_file_env ());
+      if (openssl_cert_file == NULL)
+        openssl_cert_file = X509_get_default_cert_file ();
+
+      anchor_file = g_strdup (openssl_cert_file);
+    }
 
   database = g_tls_file_database_new (anchor_file, error);
   g_free (anchor_file);
@@ -229,12 +228,10 @@ g_tls_backend_openssl_class_init (GTlsBackendOpensslClass *klass)
   klass->create_database = g_tls_backend_openssl_real_create_database;
 }
 
-#ifndef G_IO_MODULE_BUILD_STATIC
 static void
 g_tls_backend_openssl_class_finalize (GTlsBackendOpensslClass *backend_class)
 {
 }
-#endif
 
 static GTlsDatabase*
 g_tls_backend_openssl_get_default_database (GTlsBackend *backend)
@@ -284,21 +281,6 @@ g_tls_backend_openssl_interface_init (GTlsBackendInterface *iface)
   iface->get_default_database = g_tls_backend_openssl_get_default_database;
 }
 
-#ifdef G_IO_MODULE_BUILD_STATIC
-
-void
-g_io_module_openssl_load_static (void)
-{
-  g_io_extension_point_set_required_type (g_io_extension_point_register (G_TLS_BACKEND_EXTENSION_POINT_NAME),
-                                          G_TYPE_TLS_BACKEND);
-  g_io_extension_point_implement (G_TLS_BACKEND_EXTENSION_POINT_NAME,
-                                  g_tls_backend_openssl_get_type (),
-                                  "openssl",
-                                  -1);
-}
-
-#else
-
 void
 g_tls_backend_openssl_register (GIOModule *module)
 {
@@ -308,5 +290,3 @@ g_tls_backend_openssl_register (GIOModule *module)
                                   "openssl",
                                   -1);
 }
-
-#endif

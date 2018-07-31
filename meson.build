@@ -10,21 +10,11 @@ glib = dependency('glib-2.0', version: '>=' + glib_req)
 gobject = dependency('gobject-2.0', version: '>=' + glib_req)
 gio = dependency('gio-2.0', version: '>=' + glib_req)
 
-libdir = join_paths(get_option('prefix'), get_option('libdir'))
 gio_module_dir = gio.get_pkgconfig_variable('giomoduledir',
-                                            define_variable: ['libdir', libdir])
+                                            define_variable: ['libdir', get_option('libdir')])
 assert(gio_module_dir != '', 'GIO_MODULE_DIR is missing from gio-2.0.pc')
 
 gio_querymodules = find_program('gio-querymodules')
-
-gio_supports_plugins = cc.compiles('''
-#include <glib.h>
-#ifdef GIO_STATIC_COMPILATION
-# error GIO does not support plugins
-#endif
-                                   ''',
-                                   name: 'GIO supports plugins',
-                                   dependencies: [gio])
 
 # MSVC builds of OpenSSL does not generate pkg-config files,
 # so we check for it manually here in this case, if we can't find those files
@@ -152,7 +142,6 @@ config_h_include = include_directories('.')
 subdir('tls/base')
 subdir('tls/openssl')
 subdir('tls/tests')
+subdir('po')
 
-if gio_supports_plugins
-  meson.add_install_script(join_paths('build-aux', 'post_install.py'), gio_module_dir)
-endif
+meson.add_install_script(join_paths('build-aux', 'post_install.py'), gio_module_dir)

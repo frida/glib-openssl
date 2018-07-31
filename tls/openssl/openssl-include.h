@@ -1,5 +1,5 @@
 /*
- * gtlsbio.c
+ * gtlscertificate-openssl.h
  *
  * Copyright (C) 2015 NICE s.r.l.
  *
@@ -20,46 +20,39 @@
  * exception applies. Refer to the LICENSE_EXCEPTION file for details.
  *
  * Authors: Ignacio Casal Quinteiro
+ *          Christoph Reiter
  */
 
-#include "config.h"
+/* Due to name clashes between Windows and openssl headers we have to
+ * make sure windows.h is included before openssl and that we undef the
+ * clashing macros.
+ */
 
-#include <glib/gi18n-lib.h>
-#include <gio/gio.h>
+#ifndef __G_TLS_OPENSSL_INCLUDE_H__
+#define __G_TLS_OPENSSL_INCLUDE_H__
 
-#include "gtlsbackend-openssl.h"
-
-
-void
-g_io_module_load (GIOModule *module)
-{
-  gchar *locale_dir;
-#ifdef G_OS_WIN32
-  gchar *base_dir;
-#endif
-
-  g_tls_backend_openssl_register (module);
+#include "glib.h"
 
 #ifdef G_OS_WIN32
-  base_dir = g_win32_get_package_installation_directory_of_module (NULL);
-  locale_dir = g_build_filename (base_dir, "share", "locale", NULL);
-  g_free (base_dir);
-#else
-  locale_dir = g_strdup (LOCALE_DIR);
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+/* These are defined by the Windows headers, but clash with openssl */
+#undef X509_NAME
+#undef X509_CERT_PAIR
+#undef X509_EXTENSIONS
+#undef OCSP_REQUEST
+#undef OCSP_RESPONSE
 #endif
 
-  bindtextdomain (GETTEXT_PACKAGE, locale_dir);
-  bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
-  g_free (locale_dir);
-}
+#include <openssl/ssl.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
+#include <openssl/x509v3.h>
+#include <openssl/crypto.h>
+#if (OPENSSL_VERSION_NUMBER >= 0x0090808fL) && !defined(OPENSSL_NO_OCSP)
+#include <openssl/ocsp.h>
+#endif
 
-void
-g_io_module_unload (GIOModule *module)
-{
-}
-
-gchar **
-g_io_module_query (void)
-{
-  return g_strsplit (G_TLS_BACKEND_EXTENSION_POINT_NAME, "!", -1);
-}
+#endif /* __G_TLS_OPENSSL_INCLUDE_H__ */

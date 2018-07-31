@@ -28,10 +28,7 @@
 
 #include <gio/gio.h>
 #include <glib/gi18n-lib.h>
-#include <openssl/ssl.h>
-#if (OPENSSL_VERSION_NUMBER >= 0x0090808fL) && !defined(OPENSSL_NO_OCSP)
-#include <openssl/ocsp.h>
-#endif
+#include "openssl-include.h"
 
 typedef struct _GTlsFileDatabaseOpensslPrivate
 {
@@ -760,7 +757,6 @@ g_tls_file_database_openssl_verify_ocsp_response (GTlsDatabase    *database,
   X509_STORE *store = NULL;
   OCSP_BASICRESP *basic_resp = NULL;
   int ocsp_status = 0;
-  int i;
 
   ocsp_status = OCSP_response_status (resp);
   if (ocsp_status != OCSP_RESPONSE_STATUS_SUCCESSFUL)
@@ -790,7 +786,7 @@ g_tls_file_database_openssl_verify_ocsp_response (GTlsDatabase    *database,
       goto end;
     }
 
-  for (i = 0; i < sk_X509_num (priv->trusted); i++)
+  for (int i = 0; i < sk_X509_num (priv->trusted); i++)
     {
       X509_STORE_add_cert (store, sk_X509_value (priv->trusted, i));
     }
@@ -801,7 +797,7 @@ g_tls_file_database_openssl_verify_ocsp_response (GTlsDatabase    *database,
       goto end;
     }
 
-  for (i = 0; i < OCSP_resp_count (basic_resp); i++)
+  for (int i = 0; i < OCSP_resp_count (basic_resp); i++)
     {
       OCSP_SINGLERESP *single_resp = OCSP_resp_get0 (basic_resp, i);
       ASN1_GENERALIZEDTIME *revocation_time = NULL;
