@@ -488,14 +488,18 @@ g_tls_connection_openssl_read (GTlsConnectionBase    *tls,
                                GError               **error)
 {
   GTlsConnectionOpenssl *openssl = G_TLS_CONNECTION_OPENSSL (tls);
+  GTlsConnectionOpensslPrivate *priv;
   GTlsConnectionBaseStatus status;
   SSL *ssl;
   gssize ret;
 
   ssl = g_tls_connection_openssl_get_ssl (openssl);
+  priv = g_tls_connection_openssl_get_instance_private (openssl);
 
   BEGIN_OPENSSL_IO (openssl, G_IO_IN, blocking, cancellable);
   ret = SSL_read (ssl, buffer, count);
+  if (ret == 0)
+    priv->shutting_down = TRUE;
   END_OPENSSL_IO (openssl, G_IO_IN, ret, status,
                   _("Error reading data from TLS socket: %s"), error);
 
