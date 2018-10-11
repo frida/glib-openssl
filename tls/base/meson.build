@@ -1,5 +1,3 @@
-tlsbase_incdir = include_directories('.')
-
 tlsbase_sources = [
   'gtlsconnection-base.c',
   'gtlsinputstream-base.c',

@@ -41,12 +41,7 @@ struct _GTlsBackendOpensslClass
                                            GError                    **error);
 };
 
-#ifdef G_IO_MODULE_BUILD_STATIC
-void    g_io_module_openssl_register         (void);
-void    g_io_module_openssl_load_static      (void);
-#else
 void    g_tls_backend_openssl_register       (GIOModule *module);
-#endif
 
 G_END_DECLS
 

@@ -44,17 +44,10 @@ typedef struct _GTlsBackendOpensslPrivate
 
 static void g_tls_backend_openssl_interface_init (GTlsBackendInterface *iface);
 
-#ifdef G_IO_MODULE_BUILD_STATIC
-G_DEFINE_TYPE_WITH_CODE (GTlsBackendOpenssl, g_tls_backend_openssl, G_TYPE_OBJECT,
-                         G_ADD_PRIVATE (GTlsBackendOpenssl)
-                         G_IMPLEMENT_INTERFACE (G_TYPE_TLS_BACKEND,
-                                                g_tls_backend_openssl_interface_init))
-#else
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (GTlsBackendOpenssl, g_tls_backend_openssl, G_TYPE_OBJECT, 0,
                                 G_ADD_PRIVATE_DYNAMIC (GTlsBackendOpenssl)
                                 G_IMPLEMENT_INTERFACE_DYNAMIC (G_TYPE_TLS_BACKEND,
                                                                g_tls_backend_openssl_interface_init))
-#endif
 
 static GMutex *mutex_array = NULL;
 
@@ -133,10 +126,8 @@ gtls_openssl_init (gpointer data)
   SSL_load_error_strings ();
   OpenSSL_add_all_algorithms ();
 
-#ifndef G_IO_MODULE_BUILD_STATIC
   /* Leak the module to keep it from being unloaded. */
   g_type_plugin_use (g_type_get_plugin (G_TYPE_TLS_BACKEND_OPENSSL));
-#endif
 
   return NULL;
 }
@@ -237,12 +228,10 @@ g_tls_backend_openssl_class_init (GTlsBackendOpensslClass *klass)
   klass->create_database = g_tls_backend_openssl_real_create_database;
 }
 
-#ifndef G_IO_MODULE_BUILD_STATIC
 static void
 g_tls_backend_openssl_class_finalize (GTlsBackendOpensslClass *backend_class)
 {
 }
-#endif
 
 static GTlsDatabase*
 g_tls_backend_openssl_get_default_database (GTlsBackend *backend)
@@ -292,21 +281,6 @@ g_tls_backend_openssl_interface_init (GTlsBackendInterface *iface)
   iface->get_default_database = g_tls_backend_openssl_get_default_database;
 }
 
-#ifdef G_IO_MODULE_BUILD_STATIC
-
-void
-g_io_module_openssl_load_static (void)
-{
-  g_io_extension_point_set_required_type (g_io_extension_point_register (G_TLS_BACKEND_EXTENSION_POINT_NAME),
-                                          G_TYPE_TLS_BACKEND);
-  g_io_extension_point_implement (G_TLS_BACKEND_EXTENSION_POINT_NAME,
-                                  g_tls_backend_openssl_get_type (),
-                                  "openssl",
-                                  -1);
-}
-
-#else
-
 void
 g_tls_backend_openssl_register (GIOModule *module)
 {
@@ -316,5 +290,3 @@ g_tls_backend_openssl_register (GIOModule *module)
                                   "openssl",
                                   -1);
 }
-
-#endif
