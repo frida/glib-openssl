@@ -182,9 +182,6 @@ end_openssl_io (GTlsConnectionOpenssl  *openssl,
 
   if (my_error != NULL)
     g_propagate_error (error, my_error);
-  else
-    /* FIXME: this is just for debug */
-    g_message ("end_openssl_io %s: %d, %d, %d", G_IS_TLS_CLIENT_CONNECTION (openssl) ? "client" : "server", err_code, err_lib, reason);
 
   if (error && !*error)
     {
